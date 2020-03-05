@@ -11,29 +11,41 @@ var app = express();
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
 
-http.listen(3005,function(){
-  console.log('listening on *:3005');
+
+let userSocketMap = {};
+http.listen(3012,function(){
+  console.log('listening on *:3012');
 });
 io.on('connection',function(socket){
+  
   socket.on('message',function(data){
+    const targetSocketId = userSocketMap[data.recvId];
+    console.log(targetSocketId)
+    if (io.sockets.connected[targetSocketId]) {
       var returnMsg = '';
-      switch(data.type){
-          case 'SINGLE':
-              returnMsg = 'hi~';
-              break;
-          case 'ORG':
-              break;
-          case 'GROUP':
-              break;
-      };
+      // switch(data.type){
+      //     case 'SINGLE':
+      //         returnMsg = 'hi~';
+      //         break;
+      //     case 'ORG':
+      //         break;
+      //     case 'GROUP':
+      //         break;
+      // };
       var params = {
           type:data.type,
-          typeId:data.id,
-          userId:0,
-          content:returnMsg,
-          time:new Date().getTime()
+          typeId:data.sendId,//好像用不到
+          userId:data.sendId,
+          content:data.content,
+          time:data.time
       }
-      io.send(params);
+      // io.send(params);
+      io.sockets.connected[targetSocketId].emit('message',params);
+    }
+  });
+  socket.on('setName',function(data){
+    userSocketMap[data] = socket.id;
+    console.log(userSocketMap);
   })
 })
 
