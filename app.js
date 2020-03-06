@@ -17,21 +17,15 @@ http.listen(3012,function(){
   console.log('listening on *:3012');
 });
 io.on('connection',function(socket){
-  
+  console.log('an user connected');
+  //如果当前映射列表里没有该socketId,则要求客户端再次发送相关信息进行绑定。
+  if(Object.values(userSocketMap).indexOf(socket.id)<0){
+    io.emit('server-bind-user',{});
+  }
   socket.on('message',function(data){
     const targetSocketId = userSocketMap[data.recvId];
     console.log(targetSocketId)
     if (io.sockets.connected[targetSocketId]) {
-      var returnMsg = '';
-      // switch(data.type){
-      //     case 'SINGLE':
-      //         returnMsg = 'hi~';
-      //         break;
-      //     case 'ORG':
-      //         break;
-      //     case 'GROUP':
-      //         break;
-      // };
       var params = {
           type:data.type,
           typeId:data.sendId,//好像用不到
@@ -43,10 +37,25 @@ io.on('connection',function(socket){
       io.sockets.connected[targetSocketId].emit('message',params);
     }
   });
-  socket.on('setName',function(data){
-    userSocketMap[data] = socket.id;
-    console.log(userSocketMap);
-  })
+  //建立新的映射
+  socket.on('newUser',function(data){
+    userSocketMap[data.id] = socket.id;
+    refreshUserStatus();
+  });
+  socket.on('disconnect',function(reason){
+    if (reason === 'io server disconnect') {
+      socket.connect();
+    }else{
+      //可能是客户端浏览器关闭
+      const key = Object.keys(userSocketMap).find((o)=>userSocketMap[o]==socket.id);
+      delete userSocketMap[key];
+      refreshUserStatus();
+    }
+  });
+  function refreshUserStatus(){
+    //io.sockets.emit包含当前客户端，socket.emit不包含当前客户端
+    io.sockets.emit('server-refresh-user-status',Object.keys(userSocketMap));
+  }
 })
 
 // view engine setup
