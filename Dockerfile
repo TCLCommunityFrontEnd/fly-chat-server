@@ -7,6 +7,4 @@ COPY . /app/
 EXPOSE 3010
 
 RUN npm install -g cnpm --registry=https://registry.npm.taobao.org \
-&& cnpm install \
-
-RUN node app.js
+&& cnpm install && node app.js
