@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY . /app/
 
-EXPOSE 3010
+EXPOSE 3012
 
 RUN npm install -g cnpm --registry=https://registry.npm.taobao.org \
 && cnpm install
