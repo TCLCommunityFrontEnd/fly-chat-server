@@ -10,6 +10,8 @@ var usersRouter = require('./routes/users');
 var app = express();
 var http = require('http').createServer(app);
 var io = require('socket.io')(http);
+var helper = require('./db/helper.js');
+var chatSql = require('./db/chatSql.js');
 
 
 let userSocketMap = {};
@@ -24,7 +26,6 @@ io.on('connection',function(socket){
   }
   socket.on('message',function(data){
     const targetSocketId = userSocketMap[data.recvId];
-    console.log(targetSocketId)
     if (io.sockets.connected[targetSocketId]) {
       var params = {
           type:data.type,
@@ -35,12 +36,34 @@ io.on('connection',function(socket){
       }
       // io.send(params);
       io.sockets.connected[targetSocketId].emit('message',params);
+    }else{
+      var _params = {
+        type:data.type,
+        sender:data.sendId,
+        receiver:data.recvId,
+        content:data.content
+      }
+      helper.queryArgs(chatSql.insert,Object.values(_params));
     }
   });
   //建立新的映射
   socket.on('newUser',function(data){
     userSocketMap[data.id] = socket.id;
     refreshUserStatus();
+    //查询未接收的信息
+    helper.queryArgs(chatSql.query,[data.id],function(result){
+      result.forEach(o=>{
+        var returnData = {
+          type:o.type,
+          typeId:o.sender,//好像用不到
+          userId:o.sender,
+          content:o.content,
+          time:new Date(o.timeStamp)
+        }
+        io.sockets.connected[socket.id].emit('message',returnData)
+      })
+      helper.queryArgs(chatSql.delete,[data.id]);
+    })
   });
   socket.on('disconnect',function(reason){
     if (reason === 'io server disconnect') {

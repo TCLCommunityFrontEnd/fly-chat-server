@@ -13,5 +13,8 @@
     "http-errors": "~1.6.3",
     "morgan": "~1.9.1",
     "socket.io": "^2.3.0"
+  },
+  "devDependencies": {
+    "mysql": "^2.18.1"
   }
 }
