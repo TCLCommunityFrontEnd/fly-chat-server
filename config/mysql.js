@@ -1,8 +1,8 @@
 mysql = {
-    host:'localhost',
+    host:'10.92.35.239',
     port:3306,
     user:'root',
-    password:'313569773b',
+    password:'tcl@123',
     database: "chat" //数据库名字
 
 } 
