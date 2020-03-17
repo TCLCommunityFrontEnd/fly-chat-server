@@ -48,32 +48,37 @@ io.on('connection',function(socket){
   });
   //建立新的映射
   socket.on('newUser',function(data){
-    userSocketMap[data.id] = socket.id;
-    refreshUserStatus();
-    //查询未接收的信息
-    helper.queryArgs(chatSql.query,[data.id],function(result){
-      result.forEach(o=>{
-        var returnData = {
-          type:o.type,
-          typeId:o.sender,//好像用不到
-          userId:o.sender,
-          content:o.content,
-          time:new Date(o.timeStamp)
-        }
-        io.sockets.connected[socket.id].emit('message',returnData)
+    if(userSocketMap[data.id]===undefined){
+      userSocketMap[data.id] = socket.id;
+      refreshUserStatus();
+      //查询未接收的信息
+      helper.queryArgs(chatSql.query,[data.id],function(result){
+        result.forEach(o=>{
+          var returnData = {
+            type:o.type,
+            typeId:o.sender,//好像用不到
+            userId:o.sender,
+            content:o.content,
+            time:new Date(o.timeStamp)
+          }
+          io.sockets.connected[socket.id].emit('message',returnData)
+        })
+        helper.queryArgs(chatSql.delete,[data.id]);
       })
-      helper.queryArgs(chatSql.delete,[data.id]);
-    })
+    }
   });
   socket.on('disconnect',function(reason){
-    if (reason === 'io server disconnect') {
-      socket.connect();
-    }else{
-      //可能是客户端浏览器关闭
-      const key = Object.keys(userSocketMap).find((o)=>userSocketMap[o]==socket.id);
-      delete userSocketMap[key];
-      refreshUserStatus();
-    }
+    // if (reason === 'io server disconnect') {
+    //   socket.connect();
+    // }else{
+    //   //可能是客户端浏览器关闭
+    //   const key = Object.keys(userSocketMap).find((o)=>userSocketMap[o]==socket.id);
+    //   delete userSocketMap[key];
+    //   refreshUserStatus();
+    // }
+    const key = Object.keys(userSocketMap).find((o)=>userSocketMap[o]==socket.id);
+    delete userSocketMap[key];
+    refreshUserStatus();
   });
   function refreshUserStatus(){
     //io.sockets.emit包含当前客户端，socket.emit不包含当前客户端
